@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from google import genai
 from dotenv import load_dotenv
 import os
+import time
 
 app = FastAPI()
 
@@ -14,41 +15,59 @@ client = genai.Client(api_key=api_key)
 class IdeaRequest(BaseModel):
     category: str
 
+cache = {}
+
+
+def generate_with_retry(prompt, retries=3):
+    for i in range(retries):
+        try:
+            response = client.models.generate_content(
+                model="gemini-3-flash-preview",
+                contents=prompt
+            )
+
+            return response.text.strip()
+
+        except Exception as e:
+            print(f"Attempt {i+1} failed:", e)
+            time.sleep(2)
+
+    return "Идея временно недоступна, попробуйте позже"
+
 
 @app.post("/generate")
 def generate(req: IdeaRequest):
     try:
-        print("REQUEST:", req.category)
+        category = req.category.lower().strip()
+
+        print("REQUEST:", category)
+
+        if category in cache:
+            print("CACHE HIT ⚡")
+            return {"idea": cache[category]}
+
+        print("CACHE MISS ❌")
 
         prompt = f"""
             Ты генератор идей.
 
-            Категория: {req.category}
+            Категория: {category}
 
             Правила:
-            - Сгенерируй только одну идею по категории
-            - Только одно предложение
-            - Без списков, без объяснений
-            - Максимум 6-10 слов
-            - Идея должна быть уникальной и креативной
-            - Пиши понятным и несложным языком
+            - Сгенерируй только одну идею
+            - Одно предложение
+            - 6-10 слов
+            - Без списков и объяснений
+            - Креативно и понятно
             """
 
-        response = client.models.generate_content_stream(
-            model="gemini-3-flash-preview",
-            contents=prompt
-        )
+        idea = generate_with_retry(prompt)
 
-        idea = ""
-
-        for chunk in response:
-            if chunk.text:
-                print(chunk.text, end="", flush=True)
-                idea += chunk.text
+        cache[category] = idea
 
         print("\nRESPONSE OK")
 
-        return {"idea": idea.strip()}
+        return {"idea": idea}
 
     except Exception as e:
         print("ERROR:", str(e))
