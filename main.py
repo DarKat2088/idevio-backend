@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import time
+import random
 
 app = FastAPI()
 
@@ -37,7 +38,7 @@ def generate_with_retry(prompt, retries=3):
 
         except Exception as e:
             print(f"Attempt {i+1} failed:", e)
-            time.sleep(2)
+            time.sleep(2 ** i)
 
     return "Идея временно недоступна, попробуйте позже"
 
@@ -54,7 +55,8 @@ def generate(req: IdeaRequest):
 
             Категория: {category}
 
-            Случайное число: {random.randint(1, 100000)}
+            ВАЖНО: используй случайность и не повторяй предыдущие идеи.
+            Сгенерируй уникальную идею.
 
             Правила:
             - Сгенерируй только одну идею
@@ -66,9 +68,11 @@ def generate(req: IdeaRequest):
 
         idea = generate_with_retry(prompt)
 
-        print("RESPONSE:", idea)
+        if not idea or not idea.strip():
+            return {"error": "Empty AI response"}
 
-        return {"idea": idea}
+        return {"idea": idea.strip()}
+
 
     except Exception as e:
         print("ERROR:", str(e))
