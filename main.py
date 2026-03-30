@@ -24,8 +24,6 @@ client = genai.Client(api_key=api_key)
 class IdeaRequest(BaseModel):
     category: str
 
-cache = {}
-
 
 def generate_with_retry(prompt, retries=3):
     for i in range(retries):
@@ -51,16 +49,12 @@ def generate(req: IdeaRequest):
 
         print("REQUEST:", category)
 
-        if category in cache:
-            print("CACHE HIT ⚡")
-            return {"idea": cache[category]}
-
-        print("CACHE MISS ❌")
-
         prompt = f"""
             Ты генератор идей.
 
             Категория: {category}
+
+            Случайное число: {random.randint(1, 100000)}
 
             Правила:
             - Сгенерируй только одну идею
@@ -72,9 +66,7 @@ def generate(req: IdeaRequest):
 
         idea = generate_with_retry(prompt)
 
-        cache[category] = idea
-
-        print("\nRESPONSE OK")
+        print("RESPONSE:", idea)
 
         return {"idea": idea}
 
