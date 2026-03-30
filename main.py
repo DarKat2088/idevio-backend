@@ -1,10 +1,15 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from google import genai
+from dotenv import load_dotenv
+import os
 
 app = FastAPI()
 
-client = genai.Client(api_key="AIzaSyB_lqYJyJhB9ok8ow9wr-IqKOud_5ji4JA")
+load_dotenv()
+api_key = os.getenv("GEMINI_API_KEY")
+
+client = genai.Client(api_key=api_key)
 
 class IdeaRequest(BaseModel):
     category: str
