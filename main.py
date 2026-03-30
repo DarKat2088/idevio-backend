@@ -2,10 +2,19 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from google import genai
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 import os
 import time
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
