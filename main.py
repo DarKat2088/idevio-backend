@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import time
-import random
 
 app = FastAPI()
 
@@ -48,6 +47,7 @@ def generate(req: IdeaRequest):
     try:
         category = req.category.lower().strip()
 
+        print("API KEY:", api_key)
         print("REQUEST:", category)
 
         prompt = f"""
@@ -73,7 +73,11 @@ def generate(req: IdeaRequest):
 
         return {"idea": idea.strip()}
 
-
     except Exception as e:
-        print("ERROR:", str(e))
-        return {"error": str(e)}
+        error_text = str(e)
+        print("ERROR:", error_text)
+
+        if "429" in error_text:
+            return {"error": "Лимит API исчерпан"}
+
+        return {"error": error_text}
